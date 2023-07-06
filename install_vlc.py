@@ -31,14 +31,13 @@ def get_expected_sha256():
         str: Expected SHA-256 hash value of VLC installer
     """
     #Step 1
-    url = 'http://download.videolan.org/pub/videolan/vlc/3.0.17.4/win64/SHA256SUMS'
-    response = requests.get(url)
-    text = response.text
-    sha256_start_index = text.find('SHA-256: ') + len('SHA-256: ')
-    sha256_end_index = text.find('</p>', sha256_start_index)
-    expected_sha256 = text[sha256_start_index:sha256_end_index].strip()
-    return expected_sha256
-    # Hint: See example code in lab instructions entitled "Extracting Text from a Response Message Body"
+    file_url = 'http://download.videolan.org/pub/videolan/vlc/3.0.17.4/win64/SHA256SUMS'
+    response = requests.get(file_url)
+    if response.status_code == requests.codes.ok:
+        file_content = response.text
+        get_expected_sha256 = file_content.split()[0]  
+    return get_expected_sha256
+   # Hint: See example code in lab instructions entitled "Extracting Text from a Response Message Body"
     # Hint: Use str class methods, str slicing, and/or regex to extract the expected SHA-256 value from the text 
 
 def download_installer():
@@ -50,8 +49,11 @@ def download_installer():
     #Step 2
     url = 'http://download.videolan.org/pub/videolan/vlc/3.0.17.4/win64/'
     response = requests.get(url)
-    installer_data = response.content
-    return installer_data
+    if response.status_code == requests.codes.ok:
+        # Extract binary file content from response message body
+        file_content = response.content
+        return file_content
+
     # Hint: See example code in lab instructions entitled "Downloading a Binary File"
     
 
@@ -68,7 +70,12 @@ def installer_ok(installer_data, expected_sha256):
     """    
     #Step 3
     sha256 = hashlib.sha256(installer_data).hexdigest()
-    return sha256 == expected_sha256
+    if sha256 == expected_sha256:
+        return True
+    else:
+        
+        return False
+    
     # Hint: See example code in lab instructions entitled "Computing the Hash Value of a Response Message Body"
 
 
@@ -82,7 +89,7 @@ def save_installer(installer_data):
         str: Full path of the saved VLC installer file
     """
     #Step 4
-    installer_path = 'vlc_installer.exe'
+    installer_path = os.path.join(os.getenv('TEMP'), 'vlc_installer.exe')
     with open(installer_path, 'wb') as file:
         file.write(installer_data)
     return installer_path
@@ -96,7 +103,7 @@ def run_installer(installer_path):
         installer_path (str): Full path of the VLC installer file
     """    
     # Step 5
-    subprocess.call([installer_path, '/S'])
+    subprocess.run([installer_path, '/L=1033', '/S'])
     # Hint: See example code in lab instructions entitled "Running the VLC Installer"
     return
     
